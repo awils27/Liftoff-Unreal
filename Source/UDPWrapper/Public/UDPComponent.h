@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
-#include "Sockets/Public/IPAddress.h"
+#include "IPAddress.h"
 #include "Common/UdpSocketBuilder.h"
 #include "Common/UdpSocketReceiver.h"
 #include "Common/UdpSocketSender.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
 #include "UDPComponent.generated.h"
 
 //UDP Connection Settings
@@ -72,11 +73,44 @@ struct UDPWRAPPER_API FUDPSettings
 	FUDPSettings();
 };
 
+USTRUCT(BlueprintType) 
+struct UDPWRAPPER_API FLiftOffData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP Connection Properties")
+	float Time;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP Connection Properties")
+	FVector Location;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP Connection Properties")
+	FRotator Rotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP Connection Properties")
+	FRotator Gyro;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP Connection Properties")
+	TArray<float> Input;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP Connection Properties")
+	TArray<float> Battery;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP Connection Properties")
+	int Engines;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UDP Connection Properties")
+	TArray<float> EngineRPM;
+
+};
+
+
 class UDPWRAPPER_API FUDPNative
 {
 public:
 
-	TFunction<void(const TArray<uint8>&, const FString&, const int32&)> OnReceivedBytes;
+	//Here is where the event is defined
+	TFunction<void(const FLiftOffData&, const FString&, const int32&)> OnReceivedBytes;
 	TFunction<void(int32 Port)> OnReceiveOpened;
 	TFunction<void(int32 Port)> OnReceiveClosed;
 	TFunction<void(int32 SpecifiedPort, int32 BoundPort, FString BoundIP)> OnSendOpened;
@@ -130,7 +164,7 @@ protected:
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUDPSocketStateSignature, int32, Port);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FUDPSocketSendStateSignature, int32, SpecifiedPort, int32, BoundPort, const FString&, BoundIP);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FUDPMessageSignature, const TArray<uint8>&, Bytes, const FString&, IPAddress, const int32&, Port);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FUDPMessageSignature, const FLiftOffData&, Data, const FString&, IPAddress, const int32&, Port);
 
 UCLASS(ClassGroup = "Networking", meta = (BlueprintSpawnableComponent))
 class UDPWRAPPER_API UUDPComponent : public UActorComponent

@@ -45,9 +45,11 @@ void UUDPComponent::LinkupCallbacks()
 		Settings.bIsReceiveOpen = false;
 		OnReceiveSocketClosed.Broadcast(Port);
 	};
-	Native->OnReceivedBytes = [this](const TArray<uint8>& Data, const FString& Endpoint, const int32& Port)
+
+	//Also add liftoff data here
+	Native->OnReceivedBytes = [this](const FLiftOffData& Data, const FString& Endpoint, const int32& Port)
 	{
-		OnReceivedBytes.Broadcast(Data, Endpoint, Port);
+		//OnReceivedBytes.Broadcast(Data, Endpoint, Port);
 	};
 }
 
@@ -274,6 +276,7 @@ bool FUDPNative::OpenReceiveSocket(const FString& InListenIP /*= TEXT("0.0.0.0")
 			return;
 		}
 
+		FLiftOffData LOData;
 		TArray<uint8> Data;
 		Data.AddUninitialized(DataPtr->TotalSize());
 		DataPtr->Serialize(Data.GetData(), DataPtr->TotalSize());
@@ -281,21 +284,22 @@ bool FUDPNative::OpenReceiveSocket(const FString& InListenIP /*= TEXT("0.0.0.0")
 		FString SenderIp = Endpoint.Address.ToString();
 		int32 SenderPort = Endpoint.Port;
 
+		//Here is where i want to insert the liftoff code//
 		if (Settings.bReceiveDataOnGameThread)
 		{
 			//Copy data to receiving thread via lambda capture
-			AsyncTask(ENamedThreads::GameThread, [this, Data, SenderIp, SenderPort]()
+			AsyncTask(ENamedThreads::GameThread, [this, LOData, SenderIp, SenderPort]()
 			{
 				//double check we're still bound on this thread
 				if (OnReceivedBytes)
 				{
-					OnReceivedBytes(Data, SenderIp, SenderPort);
+					OnReceivedBytes(LOData, SenderIp, SenderPort);
 				}
 			});
 		}
 		else
 		{
-			OnReceivedBytes(Data, SenderIp, SenderPort);
+			OnReceivedBytes(LOData, SenderIp, SenderPort);
 		}
 	});
 
